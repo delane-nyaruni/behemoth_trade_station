@@ -1,0 +1,36 @@
+name: Clean Mailbox
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 5 1 * *'    # 1st of every month, 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  clean_mailbox:
+    environment: USER_CREDENTIALS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      
+      - name: Migrate Database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MYSQL_DB_PASSWORD: ${{ secrets.MYSQL_DB_PASSWORD }}
+        # FIXED: Added timeout and --noinput
+        run: timeout 60 python manage.py migrate --noinput --verbosity 3
+      
+      - name: Run Mailbox Cleanup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MYSQL_DB_PASSWORD: ${{ secrets.MYSQL_DB_PASSWORD }}
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+        run: python -u cleaning_engine/scripts/clean_mailbox.py
