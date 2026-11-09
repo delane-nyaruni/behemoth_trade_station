@@ -13,7 +13,7 @@ def analyze_sentiment(headline: str) -> dict:
 
     try:
         response = client.chat.completions.create(
-            # The heavy hitter for deeper  gpt
+            # The heavy hitter for deeper  gpt-oss
             model="openai/gpt-oss-120b", 
             response_format={"type": "json_object"},
             messages=[
